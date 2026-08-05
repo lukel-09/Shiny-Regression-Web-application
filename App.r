@@ -87,14 +87,23 @@ ui <- fluidPage(
 
 # Define server logic to read selected file ----
 server <- function(input, output, session) {
- 
+
   # reactiveVal with data frame
   #Output column names 
   output$Column_name <- renderText({
    model <- lm(input$Responsecolumn ~ input$Explanatorycolumn)
     input$Explanatorycolumn
   })
-  
+
+  df <- reactiveVal()
+  observe({
+    req(input$file1)
+    df.temp <- read.csv(input$file1$datapath,
+                   header = input$header,
+                   sep = input$sep,
+                   quote = input$quote)
+    df(df.temp) # this line updates the df on line 90
+  })
   output$contents <- renderTable({
     
     # input$file1 will be NULL initially. After the user selects
@@ -125,6 +134,37 @@ server <- function(input, output, session) {
       return(df)
     }
     
+  })
+  
+  observe({
+    x <- colnames(df())
+    
+    # Can use character(0) to remove all choices
+    if (is.null(x))
+      x <- character(0)
+    
+    # Can also set the label and select items
+    updateSelectInput(session, "Responsecolumn",
+                      label = paste("Select Response Variable"),
+                      choices = x,
+                      selected = NULL
+    )
+  })
+  
+  observe({
+    x <- colnames(df())
+    
+    # Can use character(0) to remove all choices
+    if (is.null(x))
+      x <- character(0)
+    
+    # Can also set the label and select items
+    updateSelectInput(session, "Explanatorycolumn",
+                      label = paste("Select Explantory Variables"),
+                      choices = x,
+                      selected = NULL
+                      
+    )
   })
   
 }
