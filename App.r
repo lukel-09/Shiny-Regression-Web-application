@@ -79,7 +79,7 @@ ui <- fluidPage(
       
       # Output: Data file ----
       tableOutput("contents"),
-      textOutput("model")
+      verbatimTextOutput("model")
     )
     
   )
@@ -88,11 +88,13 @@ ui <- fluidPage(
 # Define server logic to read selected file ----
 server <- function(input, output, session) {
 
-  # reactiveVal with data frame
+ 
   #Output column names 
-  output$Column_name <- renderText({
-   model <- lm(input$Responsecolumn ~ input$Explanatorycolumn)
-    input$Explanatorycolumn
+  output$model <- renderPrint({
+    formula <- as.formula(paste(input$Responsecolumn, "~", paste(input$Explanatorycolumn, collapse = "+")))
+   model <- lm(formula, data= df())
+    print(model)
+    
   })
 
   df <- reactiveVal()
