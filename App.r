@@ -79,7 +79,7 @@ ui <- fluidPage(
       
       # Output: Data file ----
       tableOutput("contents"),
-      textOutput("Column_name")
+      textOutput("model")
     )
     
   )
@@ -91,14 +91,7 @@ server <- function(input, output, session) {
   # reactiveVal with data frame
   #Output column names 
   output$Column_name <- renderText({
-    #req(input$file1)
-    #df <- read.csv(input$file1$datapath,
-     #              header = input$header,
-      #             sep = input$sep,
-       #            quote = input$quote)
-    
-    
-    #lm(df[,9] ~ df[,8])$coefficients
+   model <- lm(input$Responsecolumn ~ input$Explanatorycolumn)
     input$Explanatorycolumn
   })
   
