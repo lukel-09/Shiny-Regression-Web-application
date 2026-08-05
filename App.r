@@ -86,7 +86,7 @@ ui <- fluidPage(
 )
 
 # Define server logic to read selected file ----
-server <- function(input, output) {
+server <- function(input, output, session) {
  
   # reactiveVal with data frame
   #Output column names 
