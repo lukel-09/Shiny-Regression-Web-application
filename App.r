@@ -3,6 +3,7 @@ library(shiny)
 # Define UI for data upload app ----
 ui <- fluidPage(
   
+
   # App title ----
   titlePanel("Uploading Files"),
   
@@ -52,10 +53,33 @@ ui <- fluidPage(
     
     # Main panel for displaying outputs ----
     mainPanel(
+      #Select column name
+      varSelectInput(
+        inputId = "Explanatorycolumn" ,
+        label = "Explanatory Column name",
+        data = tableOutput("contents"),
+        selected = NULL,
+        multiple = TRUE,
+        selectize = TRUE,
+        width = NULL,
+        size = NULL
+      ),
+      #Select column name
+      varSelectInput(
+        inputId = "Responsecolumn" ,
+        label = "Response Column name",
+        data = tableOutput("contents"),
+        selected = NULL,
+        multiple = FALSE,
+        selectize = TRUE,
+        width = NULL,
+        size = NULL
+      ),
+      
       
       # Output: Data file ----
-      tableOutput("contents")
-      
+      tableOutput("contents"),
+      textOutput("Column_name")
     )
     
   )
@@ -63,6 +87,20 @@ ui <- fluidPage(
 
 # Define server logic to read selected file ----
 server <- function(input, output) {
+ 
+  # reactiveVal with data frame
+  #Output column names 
+  output$Column_name <- renderText({
+    #req(input$file1)
+    #df <- read.csv(input$file1$datapath,
+     #              header = input$header,
+      #             sep = input$sep,
+       #            quote = input$quote)
+    
+    
+    #lm(df[,9] ~ df[,8])$coefficients
+    input$Explanatorycolumn
+  })
   
   output$contents <- renderTable({
     
