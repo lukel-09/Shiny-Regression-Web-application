@@ -91,6 +91,7 @@ server <- function(input, output, session) {
  
   #Output column names 
   output$model <- renderPrint({
+    req(input$Responsecolumn, input$Explanatorycolumn, df())
     formula <- as.formula(paste(input$Responsecolumn, "~", paste(input$Explanatorycolumn, collapse = "+")))
    model <- lm(formula, data= df())
     print(model)
