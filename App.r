@@ -108,65 +108,34 @@ server <- function(input, output, session) {
     df(df.temp) # this line updates the df on line 90
   })
   output$contents <- renderTable({
-    
     # input$file1 will be NULL initially. After the user selects
     # and uploads a file, head of that data file by default,
     # or all rows if selected, will be shown.
+    req(df())
     
-    req(input$file1)
-    
-    # when reading semicolon separated files,
-    # having a comma separator causes `read.csv` to error
-    tryCatch(
-      {
-        df <- read.csv(input$file1$datapath,
-                       header = input$header,
-                       sep = input$sep,
-                       quote = input$quote)
-      },
-      error = function(e) {
-        # return a safeError if a parsing error occurs
-        stop(safeError(e))
-      }
-    )
-    
-    if(input$disp == "head") {
-      return(head(df))
+    if (input$disp == "head") {
+      return(head(df()))
+    } else {
+      return(df())
     }
-    else {
-      return(df)
-    }
-    
   })
   
   observe({
     x <- colnames(df())
+    if (is.null(x)) x <- character(0)
     
-    # Can use character(0) to remove all choices
-    if (is.null(x))
-      x <- character(0)
-    
-    # Can also set the label and select items
-    updateSelectInput(session, "Responsecolumn",
-                      label = paste("Select Response Variable"),
-                      choices = x,
-                      selected = NULL
+    updateSelectizeInput(session, "Responsecolumn",
+                         label = "Select Response Variable",
+                         choices = x,
+                         selected = character(0),
+                         options = list(placeholder = "Choose a response variable")
     )
-  })
-  
-  observe({
-    x <- colnames(df())
     
-    # Can use character(0) to remove all choices
-    if (is.null(x))
-      x <- character(0)
-    
-    # Can also set the label and select items
-    updateSelectInput(session, "Explanatorycolumn",
-                      label = paste("Select Explantory Variables"),
-                      choices = x,
-                      selected = NULL
-                      
+    updateSelectizeInput(session, "Explanatorycolumn",
+                         label = "Select Explantory Variables",
+                         choices = x,
+                         selected = character(0),
+                         options = list(placeholder = "Choose explanatory variable(s)")
     )
   })
   
