@@ -79,7 +79,8 @@ ui <- fluidPage(
       
       # Output: Data file ----
       tableOutput("contents"),
-      verbatimTextOutput("model")
+      verbatimTextOutput("model"), 
+      verbatimTextOutput("lms_model")
     )
     
   )
@@ -95,8 +96,34 @@ server <- function(input, output, session) {
     formula <- as.formula(paste(input$Responsecolumn, "~", paste(input$Explanatorycolumn, collapse = "+")))
    model <- lm(formula, data= df())
     print(model)
+    })
+  
+  output$lms_model <- renderPrint({
+    req(input$Responsecolumn, input$Explanatorycolumn, df())
+    fits <- function(coeffs) {
+      X <- df()[, as.character(input$Explanatorycolumn), drop = FALSE]
+      X <- as.matrix(X)
+      X <- cbind(1, X)
+      X %*% coeffs
+    }
+    residuals <- function(coeffs) {
+      df()[, as.character(input$Responsecolumn)] - fits(coeffs)
+    }
     
-  })
+    rss <- function(coeffs) {
+      median(residuals(coeffs)^2)
+    }
+    
+    starting_points <- seq(-2, 4, by = 0.5)
+    results <- lapply(starting_points, function(start)
+      optim(par = rep(start, length(input$Explanatorycolumn) + 1), fn = rss, method = "BFGS"))
+    
+    objective_values <- sapply(results, function(r) r$value)
+    best_result <- results[[which.min(objective_values)]]
+    print(best_result)
+  }
+  ) 
+    
 
   df <- reactiveVal()
   observe({
@@ -136,6 +163,7 @@ server <- function(input, output, session) {
                          choices = x,
                          selected = character(0),
                          options = list(placeholder = "Choose explanatory variable(s)")
+    
     )
   })
   
