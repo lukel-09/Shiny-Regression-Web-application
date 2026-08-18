@@ -33,6 +33,9 @@ ui <- fluidPage(
                                Tab = "\t"),
                    selected = ","),
       
+      # Horizontal line ----
+      tags$hr(),
+      
       # Input: Select quotes ----
       radioButtons("quote", "Quote",
                    choices = c(None = "",
@@ -95,7 +98,8 @@ server <- function(input, output, session) {
     req(input$Responsecolumn, input$Explanatorycolumn, df())
     formula <- as.formula(paste(input$Responsecolumn, "~", paste(input$Explanatorycolumn, collapse = "+")))
    model <- lm(formula, data= df())
-    print(model)
+   cat("Coefficients:\n") 
+    print(model$coefficients)
     })
   
   output$lms_model <- renderPrint({
@@ -120,7 +124,9 @@ server <- function(input, output, session) {
     
     objective_values <- sapply(results, function(r) r$value)
     best_result <- results[[which.min(objective_values)]]
-    print(best_result)
+    names(best_result$par) <- c("(Intercept)", input$Explanatorycolumn)
+    cat("Coefficients:\n")
+    print(best_result$par)
   }
   ) 
     
@@ -132,7 +138,7 @@ server <- function(input, output, session) {
                    header = input$header,
                    sep = input$sep,
                    quote = input$quote)
-    df(df.temp) # this line updates the df on line 90
+    df(df.temp) 
   })
   output$contents <- renderTable({
     # input$file1 will be NULL initially. After the user selects
