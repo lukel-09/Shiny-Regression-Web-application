@@ -85,8 +85,14 @@ ui <- fluidPage(
         tabPanel("Data",
                  tableOutput("contents")),
         tabPanel("Model Summaries",
+                 textOutput("lsr_text"),
+                 tags$br(),
+                 textOutput("lsr_text2"),
                  verbatimTextOutput("model"),
-                 verbatimTextOutput("lms_model")),
+                 textOutput("lms_text"),
+                 tags$br(),
+                 textOutput("lms_text2"),
+                 verbatimTextOutput("lms_model")), 
         tabPanel("Fitted Line",
                  uiOutput("regPlot")),
         tabPanel("Residuals",
@@ -99,11 +105,13 @@ ui <- fluidPage(
 # Define server logic to read selected file ----
 server <- function(input, output, session) {
   
-  
   lm_model <- reactive({
     req(input$Responsecolumn, input$Explanatorycolumn, df())
+    output$lsr_text <- renderText({ "Least Square Regression" })
+    output$lsr_text2 <- renderText({ "Least Squares Regression finds the line that best fits the data by minimising the sum of the squared residuals. The response variable is the variable being predicted (Y), while the explanatory variable(s) are the variable(s) used to predict it (X). The intercept is the predicted value of Y when all explanatory variables are zero. Squaring the residuals ensures that larger errors have a greater influence on the fitted regression line." })
     formula <- as.formula(paste(input$Responsecolumn, "~", paste(input$Explanatorycolumn, collapse = "+")))
-    lm(formula, data = df())
+    model <- lm(formula, data = df())
+    model
   })
   
   lms_model <- reactive({
@@ -124,11 +132,27 @@ server <- function(input, output, session) {
       optim(par = rep(start, length(input$Explanatorycolumn) + 1), fn = rss, method = "BFGS"))
     
     objective_values <- sapply(results, function(r) r$value)
-    results[[which.min(objective_values)]]
-  }) 
+    
+    output$lms_text <- renderText({ "Least Median Square Regression" })
+    output$lms_text2 <- renderText({
+      "LMS regression finds the line that best fits the data by minimising the median squared residual. The response variable is the variable being predicted (Y), and the explanatory variable(s) are the variable(s) used to predict it (X). The intercept is the predicted value of Y when X is zero. Using the median makes the regression less sensitive to extreme outliers."
+    })
+    
+    best_result <- results[[which.min(objective_values)]]
+    names(best_result$par) <- c("(Intercept)", input$Explanatorycolumn)
+    best_result
+  })
   
-  output$model <- renderPrint({ print(lm_model()) })
-  output$lms_model <- renderPrint({ print(lms_model()) })
+  
+  output$model <- renderPrint({
+    cat("Coefficients:\n")
+    print(coef(lm_model()))
+  })
+  
+  output$lms_model <- renderPrint({
+    cat("Coefficients:\n")
+    print(lms_model()$par)
+  })
   
   
   # output$lms_text <- renderText({ "Least Median Square Regression explanation" })
