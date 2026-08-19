@@ -86,7 +86,8 @@ ui <- fluidPage(
       textOutput("lms_text"),
       textOutput("lms_text2"),
       verbatimTextOutput("lms_model"),
-      uiOutput("regPlot")
+      uiOutput("regPlot"),
+      uiOutput("residPlot")
     )
     
   )
@@ -209,6 +210,56 @@ server <- function(input, output, session) {
       geom_abline(intercept = lms_coef[1], slope = lms_coef[2],
                   color = "red", linewidth = 1) +
       labs(title = "OLS (blue) vs LMS (red)", x = x_cols, y = y_col) +
+      theme_minimal()
+  })
+  
+  output$residPlot <- renderUI({
+    req(lm_model(), lms_model())
+    
+    x_cols <- as.character(input$Explanatorycolumn)
+    
+    if (length(x_cols) == 1) {
+      plotOutput("residualsPlot")
+    } else {
+      h4("Please choose 1 explanatory variable to see a visualisation.")
+    }
+  })
+  
+  output$residPlot <- renderUI({
+    req(lm_model(), lms_model())
+    plotOutput("residualsPlot")
+  })
+  
+  output$residualsPlot <- renderPlot({
+    req(lm_model(), lms_model())
+    
+    x_cols <- as.character(input$Explanatorycolumn)
+    y_col <- as.character(input$Responsecolumn)
+    
+    ols_coef <- coef(lm_model())
+    lms_coef <- lms_model()$par
+    
+    X <- as.matrix(cbind(1, df()[, x_cols, drop = FALSE]))
+    actual <- df()[[y_col]]
+    
+    ols_fitted <- as.vector(X %*% ols_coef)
+    lms_fitted <- as.vector(X %*% lms_coef)
+    
+    ols_resid <- actual - ols_fitted
+    lms_resid <- actual - lms_fitted
+    
+    plot_df <- data.frame(
+      fitted = c(ols_fitted, lms_fitted),
+      residual = c(ols_resid, lms_resid),
+      model = rep(c("OLS", "LMS"), each = length(actual))
+    )
+    
+    ggplot(plot_df, aes(x = fitted, y = residual, color = model)) +
+      geom_point(alpha = 0.6) +
+      geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
+      scale_color_manual(values = c("OLS" = "blue", "LMS" = "red")) +
+      labs(title = "Residuals vs Fitted (OLS vs LMS)",
+           x = "Fitted values", y = "Residual") +
       theme_minimal()
   })
   
