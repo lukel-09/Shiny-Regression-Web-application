@@ -125,11 +125,11 @@ server <- function(input, output, session) {
       optim(par = rep(start, length(input$Explanatorycolumn) + 1), fn = rss, method = "BFGS"))
     
     objective_values <- sapply(results, function(r) r$value)
-    output$lms_text <- renderText({ "Least Median Square Regression explanation" })
-    output$lms_text2 <- renderText({ "Median square regression is a robust statistical method 
-    used to find a line of best fit. Unlike standard linear regression that minimizes the sum 
-    of squared errors, LMS minimizes the median of the squared errors, making it highly resistant 
-    to extreme outliers" })
+    output$lms_text <- renderText({ "Least Median Square Regression" })
+    tag$hr()
+    output$lms_text2 <- renderText({
+      "LMS regression finds the line that best fits the data by minimising the median squared residual. The response variable is the variable being predicted (Y), and the explanatory variable(s) are the variable(s) used to predict it (X). The intercept is the predicted value of Y when X is zero. Using the median makes the regression less sensitive to extreme outliers."
+    })
     best_result <- results[[which.min(objective_values)]]
     names(best_result$par) <- c("(Intercept)", input$Explanatorycolumn)
     cat("Coefficients:\n")
