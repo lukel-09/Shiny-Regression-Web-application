@@ -83,6 +83,8 @@ ui <- fluidPage(
       # Output: Data file ----
       tableOutput("contents"),
       verbatimTextOutput("model"), 
+      textOutput("lms_text"),
+      textOutput("lms_text2"),
       verbatimTextOutput("lms_model")
     )
     
@@ -123,6 +125,11 @@ server <- function(input, output, session) {
       optim(par = rep(start, length(input$Explanatorycolumn) + 1), fn = rss, method = "BFGS"))
     
     objective_values <- sapply(results, function(r) r$value)
+    output$lms_text <- renderText({ "Least Median Square Regression explanation" })
+    output$lms_text2 <- renderText({ "Median square regression is a robust statistical method 
+    used to find a line of best fit. Unlike standard linear regression that minimizes the sum 
+    of squared errors, LMS minimizes the median of the squared errors, making it highly resistant 
+    to extreme outliers" })
     best_result <- results[[which.min(objective_values)]]
     names(best_result$par) <- c("(Intercept)", input$Explanatorycolumn)
     cat("Coefficients:\n")
