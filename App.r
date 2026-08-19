@@ -85,7 +85,8 @@ ui <- fluidPage(
       verbatimTextOutput("model"), 
       textOutput("lms_text"),
       textOutput("lms_text2"),
-      verbatimTextOutput("lms_model")
+      verbatimTextOutput("lms_model"),
+      uiOutput("regPlot")
     )
     
   )
@@ -95,47 +96,46 @@ ui <- fluidPage(
 server <- function(input, output, session) {
 
  
-  #Output column names 
-  output$model <- renderPrint({
+  lm_model <- reactive({
     req(input$Responsecolumn, input$Explanatorycolumn, df())
     formula <- as.formula(paste(input$Responsecolumn, "~", paste(input$Explanatorycolumn, collapse = "+")))
-   model <- lm(formula, data= df())
-   cat("Coefficients:\n") 
-    print(model$coefficients)
-    })
+    lm(formula, data = df())
+  })
   
-  output$lms_model <- renderPrint({
+  lms_model <- reactive({
     req(input$Responsecolumn, input$Explanatorycolumn, df())
+    
     fits <- function(coeffs) {
-      X <- df()[, as.character(input$Explanatorycolumn), drop = FALSE]
-      X <- as.matrix(X)
+      X <- as.matrix(df()[, as.character(input$Explanatorycolumn), drop = FALSE])
       X <- cbind(1, X)
       X %*% coeffs
     }
-    residuals <- function(coeffs) {
+    residuals_fn <- function(coeffs) {
       df()[, as.character(input$Responsecolumn)] - fits(coeffs)
     }
-    
-    rss <- function(coeffs) {
-      median(residuals(coeffs)^2)
-    }
+    rss <- function(coeffs) median(residuals_fn(coeffs)^2)
     
     starting_points <- seq(-2, 4, by = 0.5)
     results <- lapply(starting_points, function(start)
       optim(par = rep(start, length(input$Explanatorycolumn) + 1), fn = rss, method = "BFGS"))
     
     objective_values <- sapply(results, function(r) r$value)
-    output$lms_text <- renderText({ "Least Median Square Regression explanation" })
-    output$lms_text2 <- renderText({ "Median square regression is a robust statistical method 
-    used to find a line of best fit. Unlike standard linear regression that minimizes the sum 
-    of squared errors, LMS minimizes the median of the squared errors, making it highly resistant 
-    to extreme outliers" })
-    best_result <- results[[which.min(objective_values)]]
-    names(best_result$par) <- c("(Intercept)", input$Explanatorycolumn)
-    cat("Coefficients:\n")
-    print(best_result$par)
-  }
-  ) 
+    results[[which.min(objective_values)]]
+  }) 
+  
+  output$model <- renderPrint({ print(lm_model()) })
+  output$lms_model <- renderPrint({ print(lms_model()) })
+  
+  
+    # output$lms_text <- renderText({ "Least Median Square Regression explanation" })
+    # output$lms_text2 <- renderText({ "Median square regression is a robust statistical method 
+    # used to find a line of best fit. Unlike standard linear regression that minimizes the sum 
+    # of squared errors, LMS minimizes the median of the squared errors, making it highly resistant 
+    # to extreme outliers" })
+    # best_result <- results[[which.min(objective_values)]]
+    # names(best_result$par) <- c("(Intercept)", input$Explanatorycolumn)
+    # cat("Coefficients:\n")
+    # print(best_result$par)
     
 
   df <- reactiveVal()
@@ -178,6 +178,38 @@ server <- function(input, output, session) {
                          options = list(placeholder = "Choose explanatory variable(s)")
     
     )
+  })
+  
+  output$regPlot <- renderUI({
+    req(lm_model(), lms_model())
+    
+    x_cols <- as.character(input$Explanatorycolumn)
+    
+    if (length(x_cols) == 1) {
+      plotOutput("actualPlot")
+    } else {
+      h4("Please choose 1 explanatory variable to see a visualisation.")
+    }
+  })
+  
+  output$actualPlot <- renderPlot({
+    req(length(input$Explanatorycolumn) == 1)
+    
+    y_col <- as.character(input$Responsecolumn)
+    x_cols <- as.character(input$Explanatorycolumn)
+    
+    ols_coef <- coef(lm_model())
+    lms_coef <- lms_model()$par
+    
+    plot_df <- df()
+    ggplot(plot_df, aes(x = .data[[x_cols]], y = .data[[y_col]])) +
+      geom_point(color = "gray40") +
+      geom_abline(intercept = ols_coef[1], slope = ols_coef[2],
+                  color = "blue", linewidth = 1) +
+      geom_abline(intercept = lms_coef[1], slope = lms_coef[2],
+                  color = "red", linewidth = 1) +
+      labs(title = "OLS (blue) vs LMS (red)", x = x_cols, y = y_col) +
+      theme_minimal()
   })
   
 }
