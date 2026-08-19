@@ -1,4 +1,5 @@
 library(shiny)
+library(ggplot2)
 
 # Define UI for data upload app ----
 ui <- fluidPage(
@@ -80,16 +81,18 @@ ui <- fluidPage(
       ),
       
       
-      # Output: Data file ----
-      tableOutput("contents"),
-      verbatimTextOutput("model"), 
-      textOutput("lms_text"),
-      textOutput("lms_text2"),
-      verbatimTextOutput("lms_model"),
-      uiOutput("regPlot"),
-      uiOutput("residPlot")
+      tabsetPanel(
+        tabPanel("Data",
+                 tableOutput("contents")),
+        tabPanel("Model Summaries",
+                 verbatimTextOutput("model"),
+                 verbatimTextOutput("lms_model")),
+        tabPanel("Fitted Line",
+                 uiOutput("regPlot")),
+        tabPanel("Residuals",
+                 uiOutput("residPlot"))
+      )
     )
-    
   )
 )
 
